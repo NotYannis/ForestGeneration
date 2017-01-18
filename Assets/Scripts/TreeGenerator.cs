@@ -8,17 +8,17 @@ public class TreeGenerator : MonoBehaviour {
 
 	public int maximumVertices = 3000;
 
-	public int numberOfSides = 8;
+	public int numberOfSides = 5;
 
 	public float baseRadius = 2.0f;
 
-	public float radiusStep = 0.9f;
+	public float radiusStep = 0.3f;
 
 	public float minimumRadius = 0.1f;
 
 	public float branchRoundess = 0.8f;
 
-	public float segmentLentgh = 0.5f;
+	public float segmentLentgh = 0.3f;
 
 	public float twisting = 20.0f;
 
@@ -26,6 +26,7 @@ public class TreeGenerator : MonoBehaviour {
 
 
 	public Terrain leTerrain;
+	public Material treeTexture;
 
 	private float[] ringShape;
 
@@ -33,14 +34,9 @@ public class TreeGenerator : MonoBehaviour {
 	private List<Vector2> uvList;
 	private List<int> triangleList;
 
-
 	MeshFilter filter;
 	MeshRenderer renderer;
 
-	void OnEnable(){
-		filter = gameObject.AddComponent<MeshFilter>();
-		renderer = gameObject.AddComponent<MeshRenderer>();
-	}
 
 	// Use this for initialization
 	void Start () {
@@ -49,12 +45,16 @@ public class TreeGenerator : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		//Camera.
 		if(Input.GetMouseButtonDown(0)){
-			seed = (int)Time.time;
+			seed = 1;
 			GameObject tree = new GameObject();
+			filter = tree.AddComponent<MeshFilter>();
+			renderer = tree.AddComponent<MeshRenderer>();
+			renderer.material = treeTexture;
 
-			tree.transform.position = new Vector3(Random.Range(-250, 250), 0.0f, Random.Range(-250, 250));
+			tree.transform.position = new Vector3(Random.Range(-100, 100), 0.0f, Random.Range(-100, 100));
+			tree.transform.localScale = new Vector3(0.01f, 0.01f, 0.1f);
+			tree.AddComponent<GrowingTree>();
 			GenerateTree(tree);
 		}
 	}
@@ -74,7 +74,7 @@ public class TreeGenerator : MonoBehaviour {
 
 		Random.InitState(seed);
 
-		Branch(obj.transform.rotation, obj.transform.position, -1, baseRadius, 0.0f, obj);
+		Branch(new Quaternion(), Vector3.zero, -1, baseRadius, 0.0f, obj);
 
 		obj.transform.localRotation = transform.localRotation;
 
@@ -89,10 +89,11 @@ public class TreeGenerator : MonoBehaviour {
 		 	ringShape[i] = 1.0f - (Random.value - 0.5f) * k;
 		 }
 		 ringShape[numberOfSides] = ringShape[0];
-
 	}
 
 	private void Branch(Quaternion quaternion, Vector3 position, int lastRingVertexIndex, float radius, float textCoordV, GameObject obj){
+		//Vector3 tmpPos = position;
+
 		Vector3 offset = Vector3.zero;
 		Vector2 textCoord = new Vector2(0.0f, textCoordV);
 		float textureStepU = 1.0f / numberOfSides;
@@ -103,14 +104,17 @@ public class TreeGenerator : MonoBehaviour {
 		for(i = 0; i < numberOfSides; ++i, ang += angInc){
 			float r = ringShape[i] * radius;
 			offset.x = r * Mathf.Cos(ang);
-			offset.y = r * Mathf.Sin(ang);
+			offset.z = r * Mathf.Sin(ang);
 			vertexList.Add(position + quaternion * offset);
 			uvList.Add(textCoord);
 			textCoord.x += textureStepU;
 		}
 
+		//tree ring gen
 		if(lastRingVertexIndex >= 0){
-            for (int currentRingVertexIndex = vertexList.Count - numberOfSides - 1; currentRingVertexIndex < vertexList.Count - 1; currentRingVertexIndex++, lastRingVertexIndex++){
+			//int index = triangleList.Count;
+			int currentRingVertexIndex;
+            for (currentRingVertexIndex = vertexList.Count - numberOfSides - 1; currentRingVertexIndex < vertexList.Count - 1; currentRingVertexIndex++, lastRingVertexIndex++){
 				triangleList.Add(lastRingVertexIndex + 1);
 				triangleList.Add(lastRingVertexIndex);
 				triangleList.Add(currentRingVertexIndex);
@@ -118,18 +122,26 @@ public class TreeGenerator : MonoBehaviour {
 				triangleList.Add(currentRingVertexIndex + 1);
 				triangleList.Add(lastRingVertexIndex + 1);
 			}
+			for(i = 0; i < triangleList.Count; i++){
+				Debug.Log("T : " + i + " : " + triangleList[i]);
+			}
+			triangleList[0] = 9;
+			triangleList[1] = 5;
+			triangleList[2] = 13;
 		}
 
 		radius *= radiusStep;
 		if(radius < minimumRadius || vertexList.Count + numberOfSides >= maximumVertices){
 			vertexList.Add(position);
 			uvList.Add(textCoord + Vector2.one);
-			int n;
-			for(n = vertexList.Count  - numberOfSides - 2; n < numberOfSides - 2; ++n){
-				triangleList.Add(n);
+			int index = triangleList.Count;
+			for(i = vertexList.Count - numberOfSides - 2; i < vertexList.Count - 2; ++i){
+				triangleList.Add(i);
 				triangleList.Add(vertexList.Count - 1);
-				triangleList.Add(n + 1);
+				triangleList.Add(i + 1);
 			}
+            triangleList[index] = i;
+
 			return;
 		}
 
@@ -140,7 +152,9 @@ public class TreeGenerator : MonoBehaviour {
 		float z = (Random.value - 0.5f) * twisting;
 		obj.transform.Rotate(x, 0.0f, z);
 		lastRingVertexIndex = vertexList.Count - numberOfSides - 1;
+
 		Branch(obj.transform.rotation, position, lastRingVertexIndex, radius, textCoordV, obj);
+
 		if(vertexList.Count + numberOfSides >= maximumVertices || Random.value > branchProbability) return;
 
 		obj.transform.rotation = quaternion;
@@ -179,9 +193,6 @@ public class TreeGenerator : MonoBehaviour {
 		mesh.RecalculateBounds();
 		mesh.Optimize();
 
-
-		MeshFilter treeMesh = obj.AddComponent<MeshFilter>() as MeshFilter;
-		MeshRenderer treeRenderer = obj.AddComponent<MeshRenderer>();
-		treeMesh.mesh = mesh;
+		obj.GetComponent<MeshFilter>().mesh = mesh;
 	}
 }
