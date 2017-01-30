@@ -48,21 +48,22 @@
 				[maxvertexcount(4)]
 				void GS_Main(triangle GS_INPUT p[3], inout TriangleStream<FS_INPUT> triStream){
 					FS_INPUT fIn;
+					
 					fIn.pos = float4(p[0].pos[0] + _Distance, p[0].pos[1] + _Distance, p[0].pos[2] + _Distance, p[0].pos[3] + _Distance);
-					fIn.normal = float3(p[0].normal[0] + _Distance, p[0].normal[1] + _Distance, p[0].normal[2] + _Distance);
+					fIn.normal = float3(p[0].normal[0] + _Distance, p[0].normal[1] + _Size, p[0].normal[2] + _Size);
 					fIn.tex0 = p[0].tex0;
 					triStream.Append(fIn);
 
 					fIn.pos = float4(p[1].pos[0] + _Distance, p[1].pos[1] + _Distance, p[1].pos[2] + _Distance, p[1].pos[3] + _Distance);
-					fIn.normal = float3(p[1].normal[0] + _Distance, p[1].normal[1] + _Distance, p[1].normal[2] + _Distance);
+					fIn.normal = float3(p[1].normal[0] + _Size, p[1].normal[1] + _Size, p[1].normal[2] + _Size);
 					fIn.tex0 = p[1].tex0;
 					triStream.Append(fIn);
 
 					fIn.pos = float4(p[2].pos[0] + _Distance, p[2].pos[1] + _Distance, p[2].pos[2] + _Distance, p[2].pos[3] + _Distance);
-					fIn.normal = float3(p[2].normal[0] + _Distance, p[2].normal[1] + _Distance, p[2].normal[2] + _Distance);
+					fIn.normal = float3(p[2].normal[0] + _Size, p[2].normal[1] + _Size, p[2].normal[2] + _Size);
 					fIn.tex0 = p[2].tex0;
 					triStream.Append(fIn);
-
+					
 				}
 
 				fixed4 FS_Main(FS_INPUT input) : COLOR
